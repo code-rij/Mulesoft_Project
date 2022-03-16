@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	
+	<flow name="projectzeroFlow" doc:id="80cb660f-ccd4-4186-82f9-2620600e40ac" >
+		<http:listener doc:name="Listener" doc:id="b432cb97-37cd-449d-b994-a7038294745c" config-ref="HTTP_Listener_config" path="/projzero" allowedMethods="GET"/>
+		<logger level="INFO" doc:name="Logger" doc:id="d81f13d0-4dc7-4fe3-9c51-429e72c3c3ff" message="Start app project zero..."/>
+		<set-payload value="Project Zero initialized..." doc:name="Set Payload" doc:id="262f44b1-9f80-47a8-a9c4-e22701628d75" />
+	</flow>
+</mule>
