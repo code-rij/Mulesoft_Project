@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="2.activity_http_connectorFlow" doc:id="8578ba27-6b11-45b4-8020-dc51cc1a0396" >
+		<http:listener doc:name="HTTP GET" doc:id="85f0930a-5a82-4748-9fb0-45bcd5de144d" config-ref="HTTP_Listener_config" path="/exercise2/{id}/*"/>
+		<logger level="INFO" doc:name="Log START" doc:id="3d90923d-7778-47bf-9992-f34e0cdfd4af" message='#["Log START - " ++ flow.name]'/>
+		<set-payload value='#[%dw 2.0&#10;&#10;output application/json&#10;---&#10;&#10;{ &#10;	"uriParams": attributes.uriParams,&#10;	"queryParams": attributes.queryParams&#10;}]' doc:name="Set Payload" doc:id="f712124c-ce24-4d3a-a9f7-214cde4558d1" />
+		<logger level="INFO" doc:name="Log END" doc:id="813cfa7f-b43c-4b08-b4a9-d3a2059bae06" message='#["Log END - " ++ flow.name]'/>
+	</flow>
+</mule>
