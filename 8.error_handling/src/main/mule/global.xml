@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:cluster="http://www.mulesoft.org/schema/mule/ee/cluster" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="ae9e7a5f-06e1-499b-b818-eb1d587a431e" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="f1c87729-58c0-483b-965c-453325d9ec67" >
+		<http:request-connection host="localhost" port="8881" />
+	</http:request-config>
+	<configuration doc:name="Configuration" doc:id="194f62fa-570b-4c17-861d-b912cd46f93f" doc:description="set global error handler for mule application" defaultErrorHandler-ref="mule_global_error_handler" />
+	<error-handler name="mule_global_error_handler" doc:id="7538210e-6c7d-4fcc-b5fd-d2d009e5a25c" >
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="6d2033b6-f9aa-4b43-82f4-d425cc0f0a6b" type="ANY">
+			<logger level="INFO" doc:name="Logger" doc:id="00d3e5d9-edfd-4951-bf68-6e7b93b3a4dd" message="on error continue global element" />
+			<set-payload value='#[%dw 2.0&#10;&#10;output application/json&#10;&#10;---&#10;&#10;{&#10;	"message": "on error continue from global element"&#10;}]' doc:name="Set Payload on error continue" doc:id="f400dcb7-55e5-4d8d-aaf0-59e37eaf8f59" />
+		</on-error-continue>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="6b909088-73d8-47e5-a970-dd1c75eb27d4" type="ANY">
+			<logger level="ERROR" doc:name="Logger" doc:id="71bdd496-e153-41c5-8e5b-7f5b62e72891" message="on error propagate global element" />
+			<set-payload value='#[%dw 2.0&#10;&#10;output application/json&#10;&#10;---&#10;&#10;{&#10;	"message": "on error propagate from global element"&#10;}]' doc:name="Set Payload on error propagate" doc:id="7c576289-f5c8-49fa-b57a-4825fb0f802e" />
+		</on-error-propagate>
+	</error-handler>
+	<flow name="raise_error_based_on_customer_id" doc:id="48c2a230-c4d3-4c46-9314-13531f3c3496" >
+		<http:listener doc:name="HTTP GET" doc:id="7512ae54-a1b7-450b-8666-10bea2b5330a" config-ref="HTTP_Listener_config" path="/raise-error/{customerId}" allowedMethods="GET"/>
+		<logger level="INFO" doc:name="Log customer ID" doc:id="794f917f-fca4-4d16-9654-6aaf2c1f5e68" message="#[%dw 2.0&#10;&#10;output application/json&#10;&#10;---&#10;&#10;customerId: attributes.uriParams.customerId]"/>
+		<choice doc:name="validate customer ID" doc:id="46d95e26-91ab-445e-afa6-27886f34e2fd" >
+			<when expression="#[attributes.uriParams.customerId as Number == 2]">
+				<logger level="INFO" doc:name="Log VALIDATED" doc:id="63f4d360-07fe-4539-8ecd-ed37967bf182" message="Customer Id is validated"/>
+				<set-payload value='#[%dw 2.0&#10;&#10;output application/json&#10;&#10;---&#10;message: "customer id " ++ attributes.uriParams.customerId as String ++ " is valid!!"]' doc:name="Set Payload" doc:id="5a986fbc-880d-4419-b624-ccd4d4eb5754" />
+			</when>
+			<when expression="#[attributes.uriParams.customerId as Number == 1]">
+				<logger level="ERROR" doc:name="Log reserved error" doc:id="216fe6c3-f1ff-4f8d-b407-28d161fe163e" message="customer ID is RESERVED!!!"/>
+				<raise-error doc:name="Raise error for reserved customer" doc:id="56c2d2a3-0b2a-4995-afb1-90c0dc7587aa" type="CUSTOMER:RESERVED_ID" description="Customer ID 1 is reserved. Cannot complete flow."/>
+			</when>
+			<otherwise >
+				<raise-error doc:name="Raise default error" doc:id="11a09c9a-cba4-4926-a835-6ea132266a1b" type="CUSTOMER:INVALID_DATA" description="Customer ID is invalid. Cannot complete flow."/>
+			</otherwise>
+		</choice>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="4646bd8c-92f1-428c-b89d-8b43529a9f55" type="CUSTOMER:INVALID_DATA">
+				<logger level="ERROR" doc:name="Logger" doc:id="06333c5c-db3f-4b3f-b855-42ff8f5e466e" message='#[%dw 2.0&#10;&#10;output application/json&#10;&#10;---&#10;&#10;{&#10;	"message": "On error continue - CUSTOMER:INVALID_DATA"&#10;}]' />
+				<set-payload value='#[%dw 2.0&#10;&#10;output application/json&#10;&#10;---&#10;&#10;{&#10;	"message": "On error continue - CUSTOMER:INVALID_DATA"&#10;}]' doc:name="Set Payload" doc:id="02faaf27-41a6-432a-835a-10f3b738d974" />
+			</on-error-continue>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="61ab305d-7097-4e36-a8c9-718b18245912" >
+				<logger level="ERROR" doc:name="Logger" doc:id="e5cff2e4-394d-496d-ad22-5ab28363a628" message='#[%dw 2.0&#10;&#10;output application/json&#10;&#10;---&#10;&#10;{&#10;	"message": "On error continue - ANY - customer ID is missing or invalid"&#10;}]' />
+				<set-payload value='#[%dw 2.0&#10;&#10;output application/json&#10;&#10;---&#10;&#10;{&#10;	"message": "On error continue - ANY - customer ID is missing or invalid"&#10;}]' doc:name="Set Payload" doc:id="a7fed24c-451c-49a6-8c38-ce6e3c63132c" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>
