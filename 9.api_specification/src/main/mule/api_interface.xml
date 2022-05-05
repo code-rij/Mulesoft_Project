@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+    <http:listener-config name="mtv-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="8081" />
+    </http:listener-config>
+    <apikit:config name="mtv-config" api="mtv.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="mtv-main">
+        <http:listener config-ref="mtv-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="mtv-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="mtv-console">
+        <http:listener config-ref="mtv-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="mtv-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform>
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="put:\artists\(ID):mtv-config">
+		<set-variable value="#[attributes.uriParams.ID]" doc:name="Set Variable for artistID" doc:id="c6b3169a-e81a-4c67-9968-e1c991335c36" variableName="artistID" />
+		<set-variable value="#[payload]" doc:name="Set Variable for artist info" doc:id="6e59a385-3a57-4258-b32d-5f5a6afcd6af" variableName="artistObj" />
+		<vm:publish-consume doc:name="Publish consume: Sync - artist to update" doc:id="3282ef89-6802-42a9-bb23-4baaf30fa56d" config-ref="VM_Config" queueName="artistInfo.toPut" target="updateResponse">
+			<vm:content ><![CDATA[#[%dw 2.0
+
+output application/json
+---
+
+{
+	artistID: vars.artistID,
+	artistInfo: vars.artistObj
+}]]]></vm:content>
+		</vm:publish-consume>
+		<set-payload value="#[vars.updateResponse]" doc:name="Set Payload for response" doc:id="8b11d76c-5a18-42bb-ac9c-e8349f320535" />
+    </flow>
+    <flow name="delete:\artists\(ID):mtv-config">
+		<set-variable value="#[attributes.uriParams.ID]" doc:name="Set Variable for artistID" doc:id="2850e624-ef0d-4f26-959b-976deab853da" variableName="artistID" />
+		<vm:publish-consume doc:name="Publish consume: Sync - artist to delete" doc:id="f1cb23a8-c899-462d-8409-5e7b8598b33b" queueName="artistId.toDelete" config-ref="VM_Config">
+			<vm:content ><![CDATA[#[vars.artistID]]]></vm:content>
+		</vm:publish-consume>
+    </flow>
+	<flow name="get:\artists:mtv-config">
+		<flow-ref doc:name="Flow Reference to getAllArtists implementation" doc:id="d5bfc2bb-d76e-44e1-b45b-8b7428f191fa" name="getAllArtists"/>
+    </flow>
+    <flow name="get:\artists\(ID):mtv-config">
+		<set-variable value="#[attributes.uriParams.ID]" doc:name="Set Variable for artistID" doc:id="990026f0-e858-410a-af3b-e8fab4042385" variableName="artistID"/>
+		<vm:publish-consume doc:name="Publish consume: Sync - getAllArtistByID" doc:id="a298003a-88c1-46f8-ab10-a1a522dbe4b7" config-ref="VM_Config" queueName="artistId.toGet">
+			<vm:content ><![CDATA[#[vars.artistID]]]></vm:content>
+		</vm:publish-consume>
+    </flow>
+	<flow name="post:\artists:application\json:mtv-config">
+		<set-variable value="#[payload]" doc:name="Set Variable for artist info" doc:id="148d0343-6495-426c-a0f5-baa41c73f861" variableName="artistObj"/>
+		<vm:publish-consume doc:name="Publish consume: Sync - create new artist" doc:id="b75df95f-bdd2-4811-9cca-6d805666ffd0" config-ref="VM_Config" queueName="artistInfo.toPost">
+			<vm:content ><![CDATA[#[vars.artistObj]]]></vm:content>
+		</vm:publish-consume>
+    </flow>
+</mule>

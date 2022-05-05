@@ -1,0 +1,73 @@
+#%RAML 1.0
+title: MTV
+
+types:
+  Artist: !include exchange_modules/f7100415-9e38-4a84-ba2d-b92cb6f95f27/artist/1.0.0/artist.raml 
+  
+/artists:
+  displayName: Artists
+  get:
+    description: Get artists
+    queryParameters:
+      genres:
+        displayName: Artist genre
+        type: string
+        required: false
+        example: "alternative"
+    responses:
+      200:
+        body:
+          application/json:
+            type: Artist[]
+            examples:
+              output: !include examples/Responses/ArtistResponse.raml
+                
+
+  post:
+    description: Add new artist
+    body:
+      application/json:
+        type: Artist
+        examples: !include examples/Requests/NewArtistRequest.raml
+          
+    responses:
+      201:
+        body:
+          application/json:
+            example:
+              message: "New artist created"
+        
+  /{ID}:
+    displayName: Current artist
+    uriParameters:
+      ID:
+        displayName: Artist ID
+        description: ID for the current artist
+        type: string
+        example: "5"
+      
+    get:
+      description: Get current artist info
+      responses:
+        200:
+          body:
+            application/json:
+              type: Artist
+              examples:
+                output: !include examples/Responses/SingleArtistResponse.raml
+    put:
+      description: Update current artist info
+      responses:
+        200:
+          body:
+            application/json:
+              examples:
+                message: "Artist info has been updated"
+    delete:
+      description: Remove current artist 
+      responses:
+        200:
+          body:
+            application/json:
+              examples:
+                message: "Artist has been deleted"
